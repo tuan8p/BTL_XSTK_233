@@ -1,0 +1,135 @@
+---
+title: "ANOVA"
+author: "tuan8p"
+date: "2024-07-07"
+output: html_document
+---
+
+```{r}
+#Thêm thư viện
+library(dplyr)
+library(ggplot2)
+library(car)
+```
+
+```{r}
+#Đọc file
+All_GPUs<-read.csv("All_GPUs.csv")
+```
+
+```{r}
+#Đồng bộ giá trị khuyết thành NA
+All_GPUs <- All_GPUs %>% 
+  replace(., . == "", NA) %>%
+  replace(., . == "\n- ", NA) %>%
+  replace(., . == "None ", NA)
+missing_data <- data.frame(
+  Column = colnames(All_GPUs),
+  Percentage_Missing = sapply(All_GPUs, function(x) sum(is.na(x)) / nrow(All_GPUs) * 100)
+)
+print(missing_data)
+```
+
+```{r}
+#Tạo frame
+selected_column <- c(
+  "Manufacturer",
+  "Core_Speed",
+  "Memory_Bandwidth"
+)
+new_GPUs <- All_GPUs[, c(selected_column)]
+print(new_GPUs)
+summary(new_GPUs)
+```
+
+```{r}
+#Xử lý Memory_Bandwidth
+new_GPUs$Memory_Bandwidth <- ifelse(
+  is.na(new_GPUs$Memory_Bandwidth),
+  NA,
+  ifelse(
+    str_detect(new_GPUs$Memory_Bandwidth, "MB/sec"),
+    as.numeric(gsub("MB/sec", "", new_GPUs$Memory_Bandwidth)) / 1024,
+    as.numeric(gsub("GB/sec", "", new_GPUs$Memory_Bandwidth))
+  )
+)
+```
+
+```{r}
+#Xử lý Core_Speed
+new_GPUs$Core_Speed <- ifelse(
+  is.na(new_GPUs$Core_Speed),
+  NA,
+  ifelse(
+    str_detect(new_GPUs$Core_Speed, "MHz"),
+    as.numeric(gsub("MHz", "", new_GPUs$Core_Speed)),
+    new_GPUs$Core_Speed
+  )
+)
+```
+
+```{r}
+#Chuyển đổi thành dạng số trừ cột Manufacturer
+for (c in colnames(new_GPUs)) {
+  if (c == "Manufacturer") next
+  new_GPUs[[c]] <- ifelse(
+    is.na(new_GPUs[[c]]),
+    NA,
+    as.numeric(gsub("[^0-9.]", "", new_GPUs[[c]]))
+  )
+}
+#Thay thế các giá trị NA thành giá trị trung vị của cột đó
+for (c in colnames(new_GPUs)) {
+  ifelse(
+    missing_data$Percentage_Missing[missing_data$Column == c] < 3,
+    new_GPUs <- new_GPUs[!is.na(new_GPUs[[c]]), ],
+    new_GPUs[[c]] <- ifelse(
+      is.na(new_GPUs[[c]]),
+      median(new_GPUs[[c]], na.rm = TRUE),
+      new_GPUs[[c]]
+    )
+  )
+}
+print(new_GPUs)
+summary(new_GPUs)
+```
+```{r}
+table(new_GPUs$Manufacturer)
+```
+```{r}
+# 4 Phan tich phuong sai
+# gia dinh 1
+AMD_data <- subset(new_GPUs, new_GPUs$Manufacturer == "AMD")
+qqnorm(AMD_data$Memory_Bandwidth)
+qqline(AMD_data$Memory_Bandwidth)
+shapiro.test(AMD_data$Memory_Bandwidth)
+
+ATI_data <- subset(new_GPUs, new_GPUs$Manufacturer == "ATI")
+qqnorm(ATI_data$Memory_Bandwidth)
+qqline(ATI_data$Memory_Bandwidth)
+shapiro.test(ATI_data$Memory_Bandwidth)
+
+Intel_data <- subset(new_GPUs, new_GPUs$Manufacturer == "Intel")
+qqnorm(Intel_data$Memory_Bandwidth)
+qqline(Intel_data$Memory_Bandwidth)
+shapiro.test(Intel_data$Memory_Bandwidth)
+
+Nvidia_data <- subset(new_GPUs, new_GPUs$Manufacturer == "Nvidia")
+qqnorm(Nvidia_data$Memory_Bandwidth)
+qqline(Nvidia_data$Memory_Bandwidth)
+shapiro.test(Nvidia_data$Memory_Bandwidth)
+
+leveneTest(new_GPUs$Memory_Bandwidth ~ as.factor(new_GPUs$Manufacturer), new_GPUs)
+```
+
+```{r}
+#anova 
+anova_model <- aov(new_GPUs$Memory_Bandwidth~new_GPUs$Manufacturer,new_GPUs)
+summary(anova_model)
+```
+
+```{r}
+#  Phan tich sau anova
+TukeyHSD(anova_model)
+plot(TukeyHSD(anova_model))
+```
