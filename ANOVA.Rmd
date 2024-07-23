@@ -10,6 +10,7 @@ output: html_document
 library(dplyr)
 library(ggplot2)
 library(car)
+library(stringr)
 ```
 
 ```{r}
