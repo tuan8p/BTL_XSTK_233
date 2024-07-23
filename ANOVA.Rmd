@@ -1,7 +1,7 @@
 ---
 title: "ANOVA"
 author: "tuan8p"
-date: "2024-07-07"
+date: "2024-07-23"
 output: html_document
 ---
 
@@ -34,7 +34,6 @@ print(missing_data)
 #Tạo frame
 selected_column <- c(
   "Manufacturer",
-  "Core_Speed",
   "Memory_Bandwidth"
 )
 new_GPUs <- All_GPUs[, c(selected_column)]
@@ -51,19 +50,6 @@ new_GPUs$Memory_Bandwidth <- ifelse(
     str_detect(new_GPUs$Memory_Bandwidth, "MB/sec"),
     as.numeric(gsub("MB/sec", "", new_GPUs$Memory_Bandwidth)) / 1024,
     as.numeric(gsub("GB/sec", "", new_GPUs$Memory_Bandwidth))
-  )
-)
-```
-
-```{r}
-#Xử lý Core_Speed
-new_GPUs$Core_Speed <- ifelse(
-  is.na(new_GPUs$Core_Speed),
-  NA,
-  ifelse(
-    str_detect(new_GPUs$Core_Speed, "MHz"),
-    as.numeric(gsub("MHz", "", new_GPUs$Core_Speed)),
-    new_GPUs$Core_Speed
   )
 )
 ```
@@ -99,37 +85,37 @@ table(new_GPUs$Manufacturer)
 ```{r}
 # 4 Phan tich phuong sai
 # gia dinh 1
-AMD_data <- subset(new_GPUs, new_GPUs$Manufacturer == "AMD")
-qqnorm(AMD_data$Memory_Bandwidth)
-qqline(AMD_data$Memory_Bandwidth)
-shapiro.test(AMD_data$Memory_Bandwidth)
+AMD_data_1 <- subset(new_GPUs, new_GPUs$Manufacturer == "AMD")
+qqnorm(AMD_data_1$Memory_Bandwidth)
+qqline(AMD_data_1$Memory_Bandwidth)
+shapiro.test(AMD_data_1$Memory_Bandwidth)
 
-ATI_data <- subset(new_GPUs, new_GPUs$Manufacturer == "ATI")
-qqnorm(ATI_data$Memory_Bandwidth)
-qqline(ATI_data$Memory_Bandwidth)
-shapiro.test(ATI_data$Memory_Bandwidth)
+ATI_data_1 <- subset(new_GPUs, new_GPUs$Manufacturer == "ATI")
+qqnorm(ATI_data_1$Memory_Bandwidth)
+qqline(ATI_data_1$Memory_Bandwidth)
+shapiro.test(ATI_data_1$Memory_Bandwidth)
 
-Intel_data <- subset(new_GPUs, new_GPUs$Manufacturer == "Intel")
-qqnorm(Intel_data$Memory_Bandwidth)
-qqline(Intel_data$Memory_Bandwidth)
-shapiro.test(Intel_data$Memory_Bandwidth)
+Intel_data_1 <- subset(new_GPUs, new_GPUs$Manufacturer == "Intel")
+qqnorm(Intel_data_1$Memory_Bandwidth)
+qqline(Intel_data_1$Memory_Bandwidth)
+shapiro.test(Intel_data_1$Memory_Bandwidth)
 
-Nvidia_data <- subset(new_GPUs, new_GPUs$Manufacturer == "Nvidia")
-qqnorm(Nvidia_data$Memory_Bandwidth)
-qqline(Nvidia_data$Memory_Bandwidth)
-shapiro.test(Nvidia_data$Memory_Bandwidth)
+Nvidia_data_1 <- subset(new_GPUs, new_GPUs$Manufacturer == "Nvidia")
+qqnorm(Nvidia_data_1$Memory_Bandwidth)
+qqline(Nvidia_data_1$Memory_Bandwidth)
+shapiro.test(Nvidia_data_1$Memory_Bandwidth)
 
 leveneTest(new_GPUs$Memory_Bandwidth ~ as.factor(new_GPUs$Manufacturer), new_GPUs)
 ```
 
 ```{r}
-#anova 
-anova_model <- aov(new_GPUs$Memory_Bandwidth~new_GPUs$Manufacturer,new_GPUs)
-summary(anova_model)
+#anova 1 bien
+anova_model_1_Variable <- aov(new_GPUs$Memory_Bandwidth~new_GPUs$Manufacturer,new_GPUs)
+summary(anova_model_1_Variable)
 ```
 
 ```{r}
-#  Phan tich sau anova
-TukeyHSD(anova_model)
-plot(TukeyHSD(anova_model))
+#  Phan tich sau anova 1 bien
+tukey_result <- TukeyHSD(anova_model_1_Variable)
+plot(tukey_result)
 ```
