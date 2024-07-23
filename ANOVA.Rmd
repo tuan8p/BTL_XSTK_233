@@ -117,6 +117,6 @@ summary(anova_model_1_Variable)
 
 ```{r}
 #  Phan tich sau anova 1 bien
-tukey_result <- TukeyHSD(anova_model_1_Variable)
-plot(tukey_result)
+TukeyHSD(anova_model_1_Variable)
+plot(TukeyHSD(anova_model_1_Variable))
 ```
