@@ -16,7 +16,7 @@ correlationPlot = function(cleanedData){
     encodingIndex = encodingIndex+1
   }
   cleanedData$Memory_Type = as.numeric(cleanedData$Memory_Type)
-  dropCol = c("Manufacturer", "Dedicated", "Memory_Speed(MHz)", "Pixel_Rate(GPixel/s)", "Texture_Rate(GTexel/s)")
+  dropCol = c("Manufacturer", "Dedicated")
   cleanedData = cleanedData[, !names(cleanedData) %in% dropCol]
   cleanedData$Release_Date = as.numeric(Sys.Date() - cleanedData$Release_Date)
   corrplot(cor(cleanedData), method = "number", number.cex = 0.7, tl.cex = 0.7)
