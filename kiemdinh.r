@@ -1,3 +1,5 @@
+library(BSDA)
+
 GPU <- read.csv("./All_GPUs.csv")
 
 GPU[GPU == ""] <- NA
@@ -18,6 +20,7 @@ GPU$Memory_Speed <- as.numeric(gsub("[^0-9.]", "", GPU$Memory_Speed))
 Memory_Speed_median_value <- median(GPU$Memory_Speed, na.rm = TRUE)
 GPU$Memory_Speed <- ifelse(is.na(GPU$Memory_Speed), Memory_Speed_median_value, GPU$Memory_Speed)
 
+########################################################################################
 # Kiểm định 1 mẫu
 # Giả thuyết H0: memory_speed bé hơn hoặc bằng 1200
 # Giả thuyết H1: memory_speed lớn hơn 1200
@@ -32,41 +35,42 @@ memory_speed_sd <- sd(GPU$Memory_Speed)
 shapiro_test <- shapiro.test(GPU$Memory_Speed)
 shapiro_pValue <- shapiro_test$p.value
 print(shapiro_pValue)
+# 3.948443e-22 < 0.05 => Không phải phân phối chuẩn => Sử dụng z test
 
-if (shapiro_pValue > alpha) {
-    print("Phân phối chuẩn")
-    critical <- qt(1 - alpha, n - 1)
-    result <- (memory_speed_mean - lmao) / (memory_speed_sd / sqrt(n))
-} else {
-    print("Không phải phân phối chuẩn")
-    critical <- qnorm(1 - alpha)
-    result <- (memory_speed_mean - lmao) / (memory_speed_sd / sqrt(n))
-}
-print("Kết quả")
-print(result)
-print("Miền bác bỏ")
-print(critical)
+z_test <- z.test(GPU$Memory_Speed, mu = lmao, sigma.x = memory_speed_sd, conf.level = 1 - alpha, alternative = "greater")
+print(z_test)
 
-if (result > critical) {
-    print("Bác bỏ giả thuyết H0")
-} else {
-    print("Không đủ cơ sở để bác bỏ giả thuyết H0")
-}
+# 	One-sample z-Test
 
+# data:  GPU$Memory_Speed
+# z = -3.3371, p-value = 0.9996
+# alternative hypothesis: true mean is greater than 1200
+# 95 percent confidence interval:
+#  1162.476       NA
+# sample estimates:
+# mean of x 
+#  1174.865
+
+# p-value = 0.9996 > 0.05 => Không đủ cơ sở để bác bỏ giả thuyết H0
+
+########################################################################################
 # Kiểm định 2 mẫu
 # Giả thuyết H0: memory_speed của nhà sản xuất Nvidia và AMD bằng nhau
 # Giả thuyết H1: memory_speed của nhà sản xuất Nvidia và AMD không bằng nhau
 
-# memory_speed_NVIDIA <- GPU[GPU$Manufacturer == "Nvidia", ]$Memory_Speed
-# memory_speed_AMD <- GPU[GPU$Manufacturer == "AMD", ]$Memory_Speed
+memory_speed_NVIDIA <- GPU[GPU$Manufacturer == "Nvidia", ]$Memory_Speed
+memory_speed_AMD <- GPU[GPU$Manufacturer == "AMD", ]$Memory_Speed
 
 alpha <- 0.05
 
 memory_speed_NVIDIA_n <- nrow(GPU[GPU$Manufacturer == "Nvidia", ])
+print(memory_speed_NVIDIA_n)
+# 1743
 memory_speed_AMD_n <- nrow(GPU[GPU$Manufacturer == "AMD", ])
+print(memory_speed_AMD_n)
+# 1317
 
-memory_speed_NVIDIA_mean <- mean(memory_speed_NVIDIA)
-memory_speed_AMD_mean <- mean(memory_speed_AMD)
+# Vì 1743 != 1317 nên 2 mẫu độc lập
 
 memory_speed_NVIDIA_sd <- sd(memory_speed_NVIDIA)
 memory_speed_AMD_sd <- sd(memory_speed_AMD)
@@ -75,50 +79,34 @@ memory_speed_AMD_sd <- sd(memory_speed_AMD)
 shapiro_test_NVIDIA <- shapiro.test(memory_speed_NVIDIA)
 shapiro_pValue_NVIDIA <- shapiro_test_NVIDIA$p.value
 print(shapiro_pValue_NVIDIA)
+# 3.338881e-21
 
 shapiro_test_AMD <- shapiro.test(memory_speed_AMD)
 shapiro_pValue_AMD <- shapiro_test_AMD$p.value
 print(shapiro_pValue_AMD)
+# 1.69264e-08
 
-if (shapiro_pValue_NVIDIA > alpha & shapiro_pValue_AMD > alpha) {
-    print("Phân phối chuẩn")
-    var_pValue <- memory_speed_NVIDIA_sd / memory_speed_AMD_sd
-    if (var_pValue > 0.5 & var_pValue < 2) {
-        print("Phương sai bằng nhau")
+# 3.338881e-21 < 0.05 & 1.69264e-08 < 0.05 => Không phải phân phối chuẩn => Sử dụng z test
 
-        critical <- qt(1 - alpha / 2, memory_speed_NVIDIA_n + memory_speed_AMD_n - 2)
-        sp_square <- ((memory_speed_NVIDIA_n - 1) * memory_speed_NVIDIA_sd ^ 2 + (memory_speed_AMD_n - 1) * memory_speed_AMD_sd ^ 2) / (memory_speed_NVIDIA_n + memory_speed_AMD_n - 2)
-        result <- (memory_speed_NVIDIA_mean - memory_speed_AMD_mean) / sqrt(sp_square * (1 / memory_speed_NVIDIA_n + 1 / memory_speed_AMD_n))
-    } else {
-        print("Phương sai không bằng nhau")
+z_test <- z.test(x = memory_speed_NVIDIA, y = memory_speed_AMD, sigma.x = memory_speed_NVIDIA_sd, sigma.y = memory_speed_AMD_sd, conf.level = 1 - alpha, alternative = "two.sided")
+print(z_test)
 
-        v <- (memory_speed_NVIDIA_sd ^ 2 / memory_speed_NVIDIA_n + memory_speed_AMD_sd ^ 2 / memory_speed_AMD_n) ^ 2 / ((memory_speed_NVIDIA_sd ^ 2 / memory_speed_NVIDIA_n) ^ 2 / (memory_speed_NVIDIA_n - 1) + (memory_speed_AMD_sd ^ 2 / memory_speed_AMD_n) ^ 2 / (memory_speed_AMD_n - 1))
-        critical <- qt(1 - alpha / 2, round(v))
+# 	Two-sample z-Test
 
-        result <- (memory_speed_NVIDIA_mean - memory_speed_AMD_mean) / sqrt(memory_speed_NVIDIA_sd ^ 2 / memory_speed_NVIDIA_n + memory_speed_AMD_sd ^ 2 / memory_speed_AMD_n)
-    }
-} else {
-    print("Không phải phân phối chuẩn")
-    critical <- qnorm(1 - alpha / 2)
-    result <- (memory_speed_NVIDIA_mean - memory_speed_AMD_mean) / sqrt(memory_speed_NVIDIA_sd ^ 2 / memory_speed_NVIDIA_n + memory_speed_AMD_sd ^ 2 / memory_speed_AMD_n)
-}
+# data:  memory_speed_NVIDIA and memory_speed_AMD
+# z = 7.2601, p-value = 3.868e-13
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#   80.84935 140.64476
+# sample estimates:
+# mean of x mean of y 
+#  1232.705  1121.957 
 
-print("Kết quả")
-print(result)
-print("Miền bác bỏ")
-print(critical)
-
-if (result > critical | result < -critical) {
-    print("Bác bỏ giả thuyết H0")
-} else {
-    print("Không đủ cơ sở để bác bỏ giả thuyết H0")
-}
+# p-value = 3.868e-13 < 0.05 => Bác bỏ giả thuyết H0
 
 
 ########################################################################################
 # Tài liệu tham khảo
 # https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/shapiro.test
-# https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/TDist
-# https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/Normal
-# https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/nrow
+# https://www.rdocumentation.org/packages/BSDA/versions/1.2.2/topics/z.test
 ########################################################################################
