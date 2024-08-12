@@ -133,9 +133,3 @@ leveneTest(cleanedData$Memory_Bandwidth ~ as.factor(cleanedData$Manufacturer), c
 anova_model_1_Variable <- aov(cleanedData$Memory_Bandwidth~cleanedData$Manufacturer,cleanedData)
 summary(anova_model_1_Variable)
 ```
-
-```{r}
-#  Phan tich sau anova 1 bien
-TukeyHSD(anova_model_1_Variable)
-plot(TukeyHSD(anova_model_1_Variable))
-```
